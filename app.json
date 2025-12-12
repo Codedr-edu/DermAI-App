@@ -1,0 +1,34 @@
+{
+  "expo": {
+    "name": "DermAI",
+    "slug": "DermAI",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/Thiết kế chưa có tên.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": null,
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "dd391d90-5fd8-42df-bd0c-2fe595716147"
+      }
+    }
+  }
+}
