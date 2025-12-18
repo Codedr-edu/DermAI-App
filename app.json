@@ -20,7 +20,8 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.hha778.DermAI"
     },
     "web": {
       "favicon": "./assets/favicon.png"
