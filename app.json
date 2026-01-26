@@ -4,11 +4,12 @@
     "slug": "DermAI",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/Thiết kế chưa có tên.png",
+    "icon": "./assets/icon-main.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": null,
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
     "ios": {
