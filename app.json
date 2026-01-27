@@ -13,7 +13,11 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "Ứng dụng cần quyền truy cập Camera để kiểm tra da.",
+        "NSMicrophoneUsageDescription": "Ứng dụng cần quyền truy cập Micro để quay video."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -22,7 +26,12 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.hha778.DermAI"
+      "package": "com.hha778.DermAI",
+      "permissions": [
+        "CAMERA",
+        "RECORD_AUDIO",
+        "MODIFY_AUDIO_SETTINGS"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
