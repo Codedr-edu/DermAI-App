@@ -6,7 +6,6 @@
     "orientation": "portrait",
     "icon": "./assets/icon-main.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
@@ -16,30 +15,52 @@
       "supportsTablet": true,
       "infoPlist": {
         "NSCameraUsageDescription": "Ứng dụng cần quyền truy cập Camera để kiểm tra da.",
-        "NSMicrophoneUsageDescription": "Ứng dụng cần quyền truy cập Micro để quay video."
-      }
+        "NSMicrophoneUsageDescription": "Ứng dụng cần quyền truy cập Micro để quay video.",
+        "ITSAppUsesNonExemptEncryption": false
+      },
+      "bundleIdentifier": "com.hha778.DermAI"
     },
     "android": {
+      "icon": "./assets/icon.png",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false,
       "package": "com.hha778.DermAI",
+      "largeHeap": true,
       "permissions": [
         "CAMERA",
         "RECORD_AUDIO",
-        "MODIFY_AUDIO_SETTINGS"
+        "MODIFY_AUDIO_SETTINGS",
+        "INTERNET",
+        "ACCESS_NETWORK_STATE"
       ]
-    },
-    "web": {
-      "favicon": "./assets/favicon.png"
     },
     "extra": {
       "eas": {
-        "projectId": "dd391d90-5fd8-42df-bd0c-2fe595716147"
+        "projectId": "23b98fa7-82d1-437f-b2a5-cf5f0b716197"
       }
-    }
+    },
+    "plugins": [
+      "expo-asset",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "newArchEnabled": false,
+            "minSdkVersion": 24,
+            "extractNativeLibs": true,
+            "kotlinVersion": "2.1.20",
+            "packagingOptions": {
+              "pickFirst": [
+                "**/libfbjni.so",
+                "**/libc++_shared.so"
+              ]
+            }
+          }
+        }
+      ]
+    ],
+    "owner": "nigga123"
   }
 }

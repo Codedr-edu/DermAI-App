@@ -1,0 +1,9 @@
+
+node_modules/
+.expo/
+.git/
+android/
+ios/
+*.onnx
+*.onnx.data
+scripts/temp_saved_model/

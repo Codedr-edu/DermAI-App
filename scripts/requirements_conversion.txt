@@ -1,0 +1,7 @@
+# Required packages for model conversion
+onnx==1.15.0
+onnx-tf==1.10.0
+tensorflow==2.15.0
+torch>=2.0.0
+torchvision>=0.15.0
+numpy

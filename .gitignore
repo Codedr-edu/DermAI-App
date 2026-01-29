@@ -39,3 +39,7 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# Large ML models (Too large for GitHub Free)
+*.ptl
+*.onnx.data
