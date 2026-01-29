@@ -115,6 +115,11 @@ repositories {
 dependencies {
   def pytorchLiteVersion = '1.12.2'
   implementation "org.pytorch:pytorch_android_lite:\${pytorchLiteVersion}"
+  
+  def fbjniVersion = '0.5.1'
+  implementation "com.facebook.fbjni:fbjni:\${fbjniVersion}"
+  extractHeaders("com.facebook.fbjni:fbjni:\${fbjniVersion}")
+
   api "com.facebook.react:react-native:+"
 
   // extractHeaders bypassed
@@ -230,6 +235,15 @@ if (fs.existsSync(cmakePath)) {
        } else {
            console.log('  WARNING: Could not find insertion point for TurboModule include path.');
        }
+    }
+
+    // Fix FBJNI header search path
+    if (content.includes('fbjni-*-headers.jar')) {
+         content = content.replace(
+             'fbjni-*-headers.jar/',
+             'fbjni-*/headers'
+         );
+         console.log('  Fixed FBJNI header glob.');
     }
 
     fs.writeFileSync(cmakePath, content);
