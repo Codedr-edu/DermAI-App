@@ -239,11 +239,47 @@ if (fs.existsSync(cmakePath)) {
 
     // Fix FBJNI header search path
     if (content.includes('fbjni-*-headers.jar')) {
+         const fbjniPatch = `
+file (GLOB LIBFBJNI_INCLUDE_DIR "\${BUILD_DIR}/fbjni-*/headers")
+if (NOT LIBFBJNI_INCLUDE_DIR)
+    file (GLOB LIBFBJNI_INCLUDE_DIR "\${BUILD_DIR}/fbjni-*/include")
+endif()
+message(STATUS " [Patch] BUILD_DIR: \${BUILD_DIR}")
+message(STATUS " [Patch] LIBFBJNI_INCLUDE_DIR: \${LIBFBJNI_INCLUDE_DIR}")
+file(GLOB_RECURSE FBJNI_FILES "\${BUILD_DIR}/fbjni-*/*")
+if(NOT LIBFBJNI_INCLUDE_DIR)
+    message(WARNING " [Patch] Could not find fbjni headers! Searching build dir...")
+    foreach(f \${FBJNI_FILES})
+        if(f MATCHES "fbjni.h")
+            message(STATUS " [Patch] Found fbjni.h at: \${f}")
+        endif()
+    endforeach()
+endif()
+`;
          content = content.replace(
-             'fbjni-*-headers.jar/',
-             'fbjni-*/headers'
+             /file\s*\(GLOB\s*LIBFBJNI_INCLUDE_DIR\s*"\${BUILD_DIR}\/fbjni-\*-headers\.jar\/"\)/,
+             fbjniPatch
          );
-         console.log('  Fixed FBJNI header glob.');
+         // Also handle the case where we already replaced it partially in previous attempts if needed, 
+         // but regex above is safer for targeting the original or slightly modified line if it matches.
+         // Let's stick to replacing the original pattern or our previous replaced pattern if safe.
+         // Since I previously replaced it with 'fbjni-*/headers', I should target that too.
+         
+         if (content.includes('fbjni-*/headers')) {
+             // It was already patched previously, let's refine it with the debug block
+              content = content.replace(
+                 'file (GLOB LIBFBJNI_INCLUDE_DIR "${BUILD_DIR}/fbjni-*/headers")',
+                 fbjniPatch
+             );
+         } else {
+             // Fallback for fresh file
+             content = content.replace(
+                 'file (GLOB LIBFBJNI_INCLUDE_DIR "${BUILD_DIR}/fbjni-*-headers.jar/")',
+                 fbjniPatch
+             );
+         }
+         
+         console.log('  Fixed FBJNI header glob & added Cmake debugging.');
     }
 
     fs.writeFileSync(cmakePath, content);
