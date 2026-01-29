@@ -113,11 +113,14 @@ repositories {
 }
 
 dependencies {
-  def pytorchLiteVersion = '1.12.2'
-  implementation "org.pytorch:pytorch_android_lite:\${pytorchLiteVersion}"
+  // react-native-pytorch-core C++ includes torch/script.h + ATen/*
+  // -> needs full PyTorch Android headers, not the lite variant.
+  def pytorchVersion = '1.12.2'
+  implementation ("org.pytorch:pytorch_android:\${pytorchVersion}") {
+    exclude group: 'com.facebook.fbjni', module: 'fbjni-java-only'
+  }
   
-  def fbjniVersion = '0.5.1'
-  implementation "com.facebook.fbjni:fbjni:\${fbjniVersion}"
+  def fbjniVersion = '0.7.0'
   extractHeaders("com.facebook.fbjni:fbjni:\${fbjniVersion}")
 
   api "com.facebook.react:react-native:+"
@@ -125,7 +128,7 @@ dependencies {
   // extractHeaders bypassed
   // extractJNI bypassed
 
-  extractForNativeBuild("org.pytorch:pytorch_android_lite:\${pytorchLiteVersion}")
+  extractForNativeBuild("org.pytorch:pytorch_android:\${pytorchVersion}")
 
   implementation "androidx.appcompat:appcompat:1.2.0"
   implementation "androidx.constraintlayout:constraintlayout:2.1.4"
@@ -237,49 +240,39 @@ if (fs.existsSync(cmakePath)) {
        }
     }
 
-    // Fix FBJNI header search path
-    if (content.includes('fbjni-*-headers.jar')) {
-         const fbjniPatch = `
+    // Fix PyTorch AAR name (lite -> full) for headers/jni globbing
+    // Otherwise we miss torch/script.h + ATen/* and the build fails.
+    if (content.includes('pytorch_android_lite')) {
+        content = content.replaceAll('pytorch_android_lite', 'pytorch_android');
+        console.log('  Switched PyTorch globbing to pytorch_android (full).');
+    }
+
+    // Fix FBJNI header search path: try headers, include, then jni/include (fbjni AAR layout)
+    // Remove ALL duplicate fallback blocks first (clean up previous patches)
+    const duplicateBlockPattern = /if\s*\(NOT\s*LIBFBJNI_INCLUDE_DIR\)\s*file\s*\(GLOB\s*LIBFBJNI_INCLUDE_DIR[^}]*endif\(\)/g;
+    // Find the first occurrence and keep only that one
+    const firstFbjniGlob = content.match(/file\s*\(GLOB\s*LIBFBJNI_INCLUDE_DIR\s*"\$\{BUILD_DIR\}\/fbjni-[^"]*"\)/);
+    if (firstFbjniGlob) {
+        // Remove everything from first fbjni glob until target_include_directories, then rebuild
+        const beforeFbjni = content.substring(0, content.indexOf(firstFbjniGlob[0]));
+        const afterTargetInclude = content.substring(content.indexOf('target_include_directories'));
+        const fbjniPatch = `
 file (GLOB LIBFBJNI_INCLUDE_DIR "\${BUILD_DIR}/fbjni-*/headers")
 if (NOT LIBFBJNI_INCLUDE_DIR)
     file (GLOB LIBFBJNI_INCLUDE_DIR "\${BUILD_DIR}/fbjni-*/include")
 endif()
+if (NOT LIBFBJNI_INCLUDE_DIR)
+    file (GLOB LIBFBJNI_INCLUDE_DIR "\${BUILD_DIR}/fbjni-*/jni/include")
+endif()
 message(STATUS " [Patch] BUILD_DIR: \${BUILD_DIR}")
 message(STATUS " [Patch] LIBFBJNI_INCLUDE_DIR: \${LIBFBJNI_INCLUDE_DIR}")
-file(GLOB_RECURSE FBJNI_FILES "\${BUILD_DIR}/fbjni-*/*")
-if(NOT LIBFBJNI_INCLUDE_DIR)
-    message(WARNING " [Patch] Could not find fbjni headers! Searching build dir...")
-    foreach(f \${FBJNI_FILES})
-        if(f MATCHES "fbjni.h")
-            message(STATUS " [Patch] Found fbjni.h at: \${f}")
-        endif()
-    endforeach()
-endif()
+
+# PyTorch headers - CRITICAL: This must be defined for torch/script.h and ATen/* to be found
+file (GLOB PYTORCH_INCLUDE_DIRS "\${BUILD_DIR}/pytorch_android-*/headers")
+message(STATUS " [Patch] PYTORCH_INCLUDE_DIRS: \${PYTORCH_INCLUDE_DIRS}")
 `;
-         content = content.replace(
-             /file\s*\(GLOB\s*LIBFBJNI_INCLUDE_DIR\s*"\${BUILD_DIR}\/fbjni-\*-headers\.jar\/"\)/,
-             fbjniPatch
-         );
-         // Also handle the case where we already replaced it partially in previous attempts if needed, 
-         // but regex above is safer for targeting the original or slightly modified line if it matches.
-         // Let's stick to replacing the original pattern or our previous replaced pattern if safe.
-         // Since I previously replaced it with 'fbjni-*/headers', I should target that too.
-         
-         if (content.includes('fbjni-*/headers')) {
-             // It was already patched previously, let's refine it with the debug block
-              content = content.replace(
-                 'file (GLOB LIBFBJNI_INCLUDE_DIR "${BUILD_DIR}/fbjni-*/headers")',
-                 fbjniPatch
-             );
-         } else {
-             // Fallback for fresh file
-             content = content.replace(
-                 'file (GLOB LIBFBJNI_INCLUDE_DIR "${BUILD_DIR}/fbjni-*-headers.jar/")',
-                 fbjniPatch
-             );
-         }
-         
-         console.log('  Fixed FBJNI header glob & added Cmake debugging.');
+        content = beforeFbjni + fbjniPatch.trim() + '\n\n' + afterTargetInclude;
+        console.log('  Fixed FBJNI header glob (removed duplicates, headers/include/jni/include fallbacks).');
     }
 
     fs.writeFileSync(cmakePath, content);
