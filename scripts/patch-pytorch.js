@@ -71,7 +71,7 @@ android {
       cmake {
         cppFlags "-fexceptions", "-frtti", "-std=c++1y", "-DONANDROID"
         abiFilters 'x86', 'x86_64', 'armeabi-v7a', 'arm64-v8a'
-        arguments '-DANDROID_STL=c++_shared', "-DNODE_MODULES_DIR=\${rootDir}/../node_modules", "-DREACT_NATIVE_MINOR_VERSION=\${appRnMinorVersion}"
+        arguments '-DANDROID_STL=c++_shared', "-DNODE_MODULES_DIR=\${rootDir}/../node_modules", "-DREACT_NATIVE_MINOR_VERSION=\${appRnMinorVersion}", "-DBUILD_DIR=\${buildDir}"
       }
     }
   }
