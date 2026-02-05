@@ -6,7 +6,10 @@ config.resolver.assetExts.push(
   'onnx',
   'data',
   'pt',
-  'ptl'
+  'pt',
+  'ptl',
+  'pte',
+  'bin'
 );
 
 module.exports = config;

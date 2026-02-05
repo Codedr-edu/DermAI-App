@@ -7,9 +7,11 @@ import {
   SafeAreaView, 
   Image,
   ActivityIndicator,
-  Alert
+  Alert,
+  ScrollView
 } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
+import * as ImagePicker from 'expo-image-picker';
 import { loadModel, runInference, Prediction } from '../services/ModelService';
 
 export default function OfflineMode() {
@@ -19,13 +21,13 @@ export default function OfflineMode() {
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [results, setResults] = useState<Prediction[]>([]);
   const [isInferenceLoading, setIsInferenceLoading] = useState(false);
+  const [facing, setFacing] = useState<'back' | 'front'>('back');
   const cameraRef = useRef<any>(null);
 
   useEffect(() => {
     async function setup() {
       try {
         console.log('📱 OfflineMode mounted, đang load model...');
-        // Load model khi màn hình offline mở ra
         const metadata = require('../assets/model/model_metadata.json');
         await loadModel(metadata);
         setIsModelLoading(false);
@@ -40,11 +42,77 @@ export default function OfflineMode() {
     setup();
   }, []);
 
+  const toggleCameraFacing = () => {
+    setFacing(current => (current === 'back' ? 'front' : 'back'));
+  };
+
+  const pickImage = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        let imageUri = result.assets[0].uri;
+        console.log('📷 Gallery URI:', imageUri);
+        
+        // Đảm bảo URI có prefix file://
+        if (!imageUri.startsWith('file://') && !imageUri.startsWith('http')) {
+          imageUri = 'file://' + imageUri;
+        }
+        
+        setCapturedImage(imageUri);
+        setIsInferenceLoading(true);
+        
+        const predictions = await runInference(imageUri);
+        setResults(predictions);
+        setIsInferenceLoading(false);
+      }
+    } catch (e) {
+      console.error(e);
+      Alert.alert("Lỗi", "Không thể chọn ảnh từ thư viện.");
+      setIsInferenceLoading(false);
+    }
+  };
+
+  const takePicture = async () => {
+    if (cameraRef.current) {
+      try {
+        const photo = await cameraRef.current.takePictureAsync({
+          quality: 0.8,
+        });
+        
+        let imageUri = photo.uri;
+        console.log('📷 Camera URI:', imageUri);
+        
+        // Đảm bảo URI có prefix file://
+        if (!imageUri.startsWith('file://') && !imageUri.startsWith('http')) {
+          imageUri = 'file://' + imageUri;
+        }
+        
+        setCapturedImage(imageUri);
+        setIsInferenceLoading(true);
+
+        const predictions = await runInference(imageUri);
+        setResults(predictions);
+        setIsInferenceLoading(false);
+      } catch (e) {
+        console.error(e);
+        Alert.alert("Lỗi", "Không thể xử lý ảnh.");
+        setIsInferenceLoading(false);
+
+      }
+    }
+  };
+
   if (!permission) return <View />;
   if (!permission.granted) {
     return (
       <View style={styles.container}>
-        <Text style={{ textAlign: 'center', marginBottom: 20 }}>
+        <Text style={{ textAlign: 'center', marginBottom: 20, color: '#fff' }}>
           Chúng tôi cần quyền truy cập Camera để chẩn đoán.
         </Text>
         <TouchableOpacity style={styles.button} onPress={requestPermission}>
@@ -53,31 +121,6 @@ export default function OfflineMode() {
       </View>
     );
   }
-
-  const takePicture = async () => {
-    if (cameraRef.current) {
-      try {
-        const photo = await cameraRef.current.takePictureAsync({
-          quality: 0.5,
-          base64: true,
-        });
-        
-        setCapturedImage(photo.uri);
-        setIsInferenceLoading(true);
-
-        // Chạy AI
-        // Lưu ý: photo.base64 trên một số máy Android có thể rất lớn, 
-        // ở bản nâng cao chúng ta sẽ resize nó trước khi truyền vào ModelService
-        const predictions = await runInference(photo.base64);
-        setResults(predictions);
-        setIsInferenceLoading(false);
-      } catch (e) {
-        console.error(e);
-        Alert.alert("Lỗi", "Không thể xử lý ảnh.");
-        setIsInferenceLoading(false);
-      }
-    }
-  };
 
   if (isModelLoading) {
     return (
@@ -99,7 +142,6 @@ export default function OfflineMode() {
             onPress={() => {
               setModelError(null);
               setIsModelLoading(true);
-              // Reload model
               const metadata = require('../assets/model/model_metadata.json');
               loadModel(metadata).then(() => {
                 setIsModelLoading(false);
@@ -119,8 +161,9 @@ export default function OfflineMode() {
     <SafeAreaView style={styles.container}>
       {capturedImage ? (
         // Màn hình kết quả
-        <View style={styles.resultContainer}>
+        <ScrollView style={styles.resultContainer}>
           <Image source={{ uri: capturedImage }} style={styles.preview} />
+          
           <View style={styles.resultTable}>
             <Text style={styles.tableTitle}>KẾT QUẢ DỰ ĐOÁN (OFFLINE)</Text>
             {results.map((res, index) => (
@@ -130,30 +173,67 @@ export default function OfflineMode() {
               </View>
             ))}
           </View>
+
+          {/* Disclaimer Box */}
+          <View style={styles.disclaimerBox}>
+            <Text style={styles.disclaimerTitle}>⚠️ Lưu ý quan trọng:</Text>
+            <Text style={styles.disclaimerText}>• Kết quả offline chỉ mang tính tham khảo</Text>
+            <Text style={styles.disclaimerText}>• Độ chính xác thấp hơn phiên bản online 1-2%</Text>
+            <Text style={styles.disclaimerText}>• Không thay thế chẩn đoán từ bác sĩ chuyên khoa</Text>
+            <Text style={styles.disclaimerText}>• Hãy tham khảo ý kiến bác sĩ da liễu nếu có triệu chứng nghiêm trọng</Text>
+          </View>
+
           <TouchableOpacity 
             style={styles.retryButton} 
             onPress={() => setCapturedImage(null)}
           >
             <Text style={styles.buttonText}>Chụp lại</Text>
           </TouchableOpacity>
-        </View>
+        </ScrollView>
       ) : (
         // Màn hình Camera
         <View style={styles.cameraWrapper}>
           <CameraView 
             style={styles.camera} 
             ref={cameraRef}
-            facing="back"
+            facing={facing}
           >
             <View style={styles.overlay}>
                <View style={styles.focusFrame} />
                <Text style={styles.hintText}>Đưa vùng da vào khung hình</Text>
+               {/* Offline Warning */}
+               <View style={styles.offlineWarning}>
+                 <Text style={styles.offlineWarningText}>
+                   ⚠️ Chế độ offline có độ chính xác thấp hơn 1-2% so với online
+                 </Text>
+               </View>
             </View>
           </CameraView>
+          
           <View style={styles.controls}>
-             <TouchableOpacity style={styles.captureBtn} onPress={takePicture}>
-                <View style={styles.captureBtnInner} />
-             </TouchableOpacity>
+            {/* Flip Camera Button */}
+            <TouchableOpacity style={styles.sideBtn} onPress={toggleCameraFacing}>
+              <Text style={styles.sideBtnText}>🔄</Text>
+              <Text style={styles.sideBtnLabel}>Xoay</Text>
+            </TouchableOpacity>
+
+            {/* Capture Button */}
+            <TouchableOpacity style={styles.captureBtn} onPress={takePicture}>
+              <View style={styles.captureBtnInner} />
+            </TouchableOpacity>
+
+            {/* Gallery Button */}
+            <TouchableOpacity style={styles.sideBtn} onPress={pickImage}>
+              <Text style={styles.sideBtnText}>🖼️</Text>
+              <Text style={styles.sideBtnLabel}>Thư viện</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Bottom Disclaimer */}
+          <View style={styles.bottomDisclaimer}>
+            <Text style={styles.bottomDisclaimerText}>
+              Kết quả AI không thay thế tư vấn từ bác sĩ chuyên khoa
+            </Text>
           </View>
         </View>
       )}
@@ -200,11 +280,39 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
+  offlineWarning: {
+    position: 'absolute',
+    bottom: 20,
+    left: 20,
+    right: 20,
+    backgroundColor: 'rgba(255, 193, 7, 0.9)',
+    padding: 10,
+    borderRadius: 8,
+  },
+  offlineWarningText: {
+    color: '#333',
+    fontSize: 12,
+    textAlign: 'center',
+    fontWeight: '600',
+  },
   controls: {
-    flex: 1,
+    flexDirection: 'row',
     backgroundColor: '#fff',
-    justifyContent: 'center',
+    justifyContent: 'space-around',
     alignItems: 'center',
+    paddingVertical: 20,
+  },
+  sideBtn: {
+    alignItems: 'center',
+    padding: 10,
+  },
+  sideBtnText: {
+    fontSize: 28,
+  },
+  sideBtnLabel: {
+    fontSize: 12,
+    color: '#666',
+    marginTop: 4,
   },
   captureBtn: {
     width: 80,
@@ -220,6 +328,15 @@ const styles = StyleSheet.create({
     height: 60,
     borderRadius: 30,
     backgroundColor: '#007bff',
+  },
+  bottomDisclaimer: {
+    backgroundColor: '#f8f9fa',
+    padding: 10,
+  },
+  bottomDisclaimerText: {
+    fontSize: 11,
+    color: '#666',
+    textAlign: 'center',
   },
   resultContainer: {
     flex: 1,
@@ -254,16 +371,37 @@ const styles = StyleSheet.create({
   cellLabel: {
     fontSize: 14,
     color: '#444',
+    flex: 1,
   },
   cellValue: {
     fontWeight: 'bold',
     color: '#007bff',
+  },
+  disclaimerBox: {
+    backgroundColor: '#fff3cd',
+    borderRadius: 10,
+    padding: 15,
+    marginTop: 15,
+    borderLeftWidth: 4,
+    borderLeftColor: '#ffc107',
+  },
+  disclaimerTitle: {
+    fontWeight: 'bold',
+    fontSize: 14,
+    color: '#856404',
+    marginBottom: 8,
+  },
+  disclaimerText: {
+    fontSize: 12,
+    color: '#856404',
+    marginBottom: 4,
   },
   retryButton: {
     backgroundColor: '#6c757d',
     padding: 15,
     borderRadius: 10,
     marginTop: 20,
+    marginBottom: 30,
     alignItems: 'center',
   },
   button: {
@@ -313,4 +451,5 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
 });
+
 

@@ -40,6 +40,6 @@ yarn-error.*
 /ios
 /android
 
-# Large ML models (Too large for GitHub Free)
+# Large ML models (Git LFS will handle these)
 *.ptl
 *.onnx.data
