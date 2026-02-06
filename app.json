@@ -7,7 +7,7 @@
     "icon": "./assets/icon-main.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/icon-main.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -21,9 +21,9 @@
       "bundleIdentifier": "com.hha778.DermAI"
     },
     "android": {
-      "icon": "./assets/icon.png",
+      "icon": "./assets/icon-main.png",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/icon-main.png",
         "backgroundColor": "#ffffff"
       },
       "package": "com.hha778.DermAI",
@@ -38,7 +38,7 @@
     },
     "extra": {
       "eas": {
-        "projectId": "7afb0540-c558-4ab7-b7e0-a49e3e83f64b"
+        "projectId": "dd391d90-5fd8-42df-bd0c-2fe595716147"
       }
     },
     "plugins": [
@@ -55,19 +55,20 @@
             "minSdkVersion": 24,
             "extractNativeLibs": true,
             "kotlinVersion": "2.1.20",
-              "packagingOptions": {
-                "pickFirst": [
-                  "**/libfbjni.so",
-                  "**/libc++_shared.so",
-                  "**/libjsi.so",
-                  "**/libreactnative.so",
-                  "**/libfolly_runtime.so",
-                  "**/libglog.so"
-                ]
-              }
+            "packagingOptions": {
+              "pickFirst": [
+                "**/libfbjni.so",
+                "**/libc++_shared.so",
+                "**/libjsi.so",
+                "**/libreactnative.so",
+                "**/libfolly_runtime.so",
+                "**/libglog.so"
+              ]
+            }
           }
         }
-      ]
+      ],
+      "expo-localization"
     ]
   }
 }

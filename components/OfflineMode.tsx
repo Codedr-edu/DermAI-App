@@ -4,17 +4,41 @@ import {
   View, 
   Text, 
   TouchableOpacity, 
-  SafeAreaView, 
   Image,
   ActivityIndicator,
   Alert,
-  ScrollView
+  ScrollView,
+  Dimensions,
+  Platform,
+  Linking
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
+import * as ImageManipulator from 'expo-image-manipulator';
+import { useTranslation } from 'react-i18next';
+import { 
+  CameraIcon, 
+  FlipIcon, 
+  GalleryIcon, 
+  PhoneIcon, 
+  HomeIcon, 
+  ChatIcon, 
+  MedicineIcon, 
+  ProfileIcon,
+  WarningIcon,
+  LogoIcon
+} from './Icons';
+import i18n from '../i18n';
 import { loadModel, runInference, Prediction } from '../services/ModelService';
 
+const { width } = Dimensions.get('window');
+
+/**
+ * OfflineMode Component được thiết kế lại theo phong cách Card UI chuyên nghiệp.
+ */
 export default function OfflineMode() {
+  const { t } = useTranslation();
   const [permission, requestPermission] = useCameraPermissions();
   const [isModelLoading, setIsModelLoading] = useState(true);
   const [modelError, setModelError] = useState<string | null>(null);
@@ -27,23 +51,49 @@ export default function OfflineMode() {
   useEffect(() => {
     async function setup() {
       try {
-        console.log('📱 OfflineMode mounted, đang load model...');
         const metadata = require('../assets/model/model_metadata.json');
         await loadModel(metadata);
         setIsModelLoading(false);
         setModelError(null);
-        console.log('✅ Model loaded thành công!');
       } catch (err: any) {
-        console.error('❌ Lỗi load model:', err);
         setIsModelLoading(false);
-        setModelError(err?.message || 'Không thể load model');
+        setModelError(err?.message || i18n.t('errors.model_load'));
       }
     }
     setup();
   }, []);
 
+  const toggleLanguage = () => {
+    const nextLang = i18n.language === 'vi' ? 'en' : 'vi';
+    i18n.changeLanguage(nextLang);
+  };
+
   const toggleCameraFacing = () => {
     setFacing(current => (current === 'back' ? 'front' : 'back'));
+  };
+
+  const processAndSetImage = async (uri: string) => {
+    try {
+      setIsInferenceLoading(true);
+      
+      // Crop và resize ảnh về 300x300 pixel trước khi đưa vào AI
+      const manipResult = await ImageManipulator.manipulateAsync(
+        uri,
+        [{ resize: { width: 300, height: 300 } }],
+        { compress: 0.8 }
+      );
+      
+      const finalUri = manipResult.uri;
+      setCapturedImage(finalUri);
+      
+      const predictions = await runInference(finalUri);
+      setResults(predictions);
+      setIsInferenceLoading(false);
+    } catch (e) {
+      console.error(e);
+      Alert.alert(t('errors.error'), t('errors.image_process'));
+      setIsInferenceLoading(false);
+    }
   };
 
   const pickImage = async () => {
@@ -56,25 +106,11 @@ export default function OfflineMode() {
       });
 
       if (!result.canceled && result.assets[0]) {
-        let imageUri = result.assets[0].uri;
-        console.log('📷 Gallery URI:', imageUri);
-        
-        // Đảm bảo URI có prefix file://
-        if (!imageUri.startsWith('file://') && !imageUri.startsWith('http')) {
-          imageUri = 'file://' + imageUri;
-        }
-        
-        setCapturedImage(imageUri);
-        setIsInferenceLoading(true);
-        
-        const predictions = await runInference(imageUri);
-        setResults(predictions);
-        setIsInferenceLoading(false);
+        await processAndSetImage(result.assets[0].uri);
       }
     } catch (e) {
       console.error(e);
-      Alert.alert("Lỗi", "Không thể chọn ảnh từ thư viện.");
-      setIsInferenceLoading(false);
+      Alert.alert(t('errors.error'), t('errors.image_picker'));
     }
   };
 
@@ -84,39 +120,23 @@ export default function OfflineMode() {
         const photo = await cameraRef.current.takePictureAsync({
           quality: 0.8,
         });
-        
-        let imageUri = photo.uri;
-        console.log('📷 Camera URI:', imageUri);
-        
-        // Đảm bảo URI có prefix file://
-        if (!imageUri.startsWith('file://') && !imageUri.startsWith('http')) {
-          imageUri = 'file://' + imageUri;
-        }
-        
-        setCapturedImage(imageUri);
-        setIsInferenceLoading(true);
-
-        const predictions = await runInference(imageUri);
-        setResults(predictions);
-        setIsInferenceLoading(false);
+        await processAndSetImage(photo.uri);
       } catch (e) {
         console.error(e);
-        Alert.alert("Lỗi", "Không thể xử lý ảnh.");
-        setIsInferenceLoading(false);
-
+        Alert.alert(t('errors.error'), t('errors.image_process'));
       }
     }
   };
 
-  if (!permission) return <View />;
+  if (!permission) return <View style={styles.container} />;
   if (!permission.granted) {
     return (
       <View style={styles.container}>
-        <Text style={{ textAlign: 'center', marginBottom: 20, color: '#fff' }}>
-          Chúng tôi cần quyền truy cập Camera để chẩn đoán.
+        <Text style={{ textAlign: 'center', marginBottom: 20, color: '#333' }}>
+          {t('common.camera_permission')}
         </Text>
         <TouchableOpacity style={styles.button} onPress={requestPermission}>
-          <Text style={styles.buttonText}>Cấp quyền Camera</Text>
+          <Text style={styles.buttonText}>{t('common.grant_permission')}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -126,124 +146,133 @@ export default function OfflineMode() {
     return (
       <View style={styles.container}>
         <ActivityIndicator size="large" color="#007bff" />
-        <Text style={styles.loadingText}>Đang khởi tạo AI Offline...</Text>
+        <Text style={styles.loadingText}>{t('offline.initializing')}</Text>
       </View>
-    );
-  }
-
-  if (modelError) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.errorBox}>
-          <Text style={styles.errorTitle}>❌ Lỗi khởi tạo AI</Text>
-          <Text style={styles.errorMessage}>{modelError}</Text>
-          <TouchableOpacity 
-            style={styles.retryButton} 
-            onPress={() => {
-              setModelError(null);
-              setIsModelLoading(true);
-              const metadata = require('../assets/model/model_metadata.json');
-              loadModel(metadata).then(() => {
-                setIsModelLoading(false);
-              }).catch((err: any) => {
-                setModelError(err?.message || 'Không thể load model');
-              });
-            }}
-          >
-            <Text style={styles.buttonText}>Thử lại</Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
     );
   }
 
   return (
     <SafeAreaView style={styles.container}>
-      {capturedImage ? (
-        // Màn hình kết quả
-        <ScrollView style={styles.resultContainer}>
-          <Image source={{ uri: capturedImage }} style={styles.preview} />
-          
-          <View style={styles.resultTable}>
-            <Text style={styles.tableTitle}>KẾT QUẢ DỰ ĐOÁN (OFFLINE)</Text>
+      <View style={styles.card}>
+        {/* Header: Logo và Chọn ngôn ngữ */}
+        <View style={styles.header}>
+          <View style={styles.logoContainer}>
+            <View style={styles.logoIcon}>
+              <Image 
+                source={require('../assets/icon-main.png')} 
+                style={{ width: 28, height: 28, borderRadius: 6 }} 
+              />
+            </View>
+            <Text style={styles.logoText}>DermAI</Text>
+          </View>
+          <TouchableOpacity style={styles.langSelector} onPress={toggleLanguage}>
+             <Text style={styles.langSelectorText}>
+               {i18n.language === 'vi' ? 'VN ▼' : 'EN ▼'}
+             </Text>
+          </TouchableOpacity>
+        </View>
+
+        <Text style={styles.subTitle}>
+          {capturedImage ? t('offline.result_title') : t('offline.capture_instruction')}
+        </Text>
+
+        {/* Khu vực hiển thị Media (Camera hoặc Ảnh đã chụp) */}
+        <View style={styles.mediaContainer}>
+          {capturedImage ? (
+             <Image source={{ uri: capturedImage }} style={styles.mainImage} />
+          ) : (
+            <>
+              <CameraView 
+                style={styles.camera} 
+                ref={cameraRef}
+                facing={facing}
+              />
+              {/* Floating Accuracy Warning */}
+              <View style={styles.floatingWarning}>
+                <WarningIcon size={12} color="#856404" style={{marginRight: 4}} />
+                <Text style={styles.floatingWarningText}>
+                  {t('offline.accuracy_warning')}
+                </Text>
+              </View>
+            </>
+          )}
+          {isInferenceLoading && (
+            <View style={styles.mediaOverlay}>
+              <ActivityIndicator size="large" color="#007bff" />
+              <Text style={[styles.loadingText, {marginTop: 10}]}>{t('offline.analyzing')}</Text>
+            </View>
+          )}
+        </View>
+
+        {/* Bảng kết quả (Chỉ hiện khi đã chẩn đoán xong) */}
+        {capturedImage && results.length > 0 && (
+          <ScrollView style={styles.resultsScroll} showsVerticalScrollIndicator={false}>
             {results.map((res, index) => (
-              <View key={index} style={styles.row}>
-                <Text style={styles.cellLabel}>{res.name}</Text>
-                <Text style={styles.cellValue}>{res.probability.toFixed(2)}%</Text>
+              <View key={index} style={styles.resultRow}>
+                <Text style={styles.diseaseName}>{t(`diseases.${res.name}`, { defaultValue: res.name })}</Text>
+                <Text style={styles.probability}>{res.probability.toFixed(1)}%</Text>
               </View>
             ))}
-          </View>
 
-          {/* Disclaimer Box */}
-          <View style={styles.disclaimerBox}>
-            <Text style={styles.disclaimerTitle}>⚠️ Lưu ý quan trọng:</Text>
-            <Text style={styles.disclaimerText}>• Kết quả offline chỉ mang tính tham khảo</Text>
-            <Text style={styles.disclaimerText}>• Độ chính xác thấp hơn phiên bản online 1-2%</Text>
-            <Text style={styles.disclaimerText}>• Không thay thế chẩn đoán từ bác sĩ chuyên khoa</Text>
-            <Text style={styles.disclaimerText}>• Hãy tham khảo ý kiến bác sĩ da liễu nếu có triệu chứng nghiêm trọng</Text>
-          </View>
-
-          <TouchableOpacity 
-            style={styles.retryButton} 
-            onPress={() => setCapturedImage(null)}
-          >
-            <Text style={styles.buttonText}>Chụp lại</Text>
-          </TouchableOpacity>
-        </ScrollView>
-      ) : (
-        // Màn hình Camera
-        <View style={styles.cameraWrapper}>
-          <CameraView 
-            style={styles.camera} 
-            ref={cameraRef}
-            facing={facing}
-          >
-            <View style={styles.overlay}>
-               <View style={styles.focusFrame} />
-               <Text style={styles.hintText}>Đưa vùng da vào khung hình</Text>
-               {/* Offline Warning */}
-               <View style={styles.offlineWarning}>
-                 <Text style={styles.offlineWarningText}>
-                   ⚠️ Chế độ offline có độ chính xác thấp hơn 1-2% so với online
-                 </Text>
-               </View>
+            {/* Detailed Disclaimer inside results */}
+            <View style={styles.noticeBox}>
+              <Text style={styles.noticeTitle}>{t('offline.important_notices')}</Text>
+              <Text style={styles.noticeItem}>{t('offline.notice_reference')}</Text>
+              <Text style={styles.noticeItem}>{t('offline.notice_no_replacement')}</Text>
+              <Text style={styles.noticeItem}>{t('offline.notice_consult_doctor')}</Text>
             </View>
-          </CameraView>
-          
-          <View style={styles.controls}>
-            {/* Flip Camera Button */}
-            <TouchableOpacity style={styles.sideBtn} onPress={toggleCameraFacing}>
-              <Text style={styles.sideBtnText}>🔄</Text>
-              <Text style={styles.sideBtnLabel}>Xoay</Text>
+          </ScrollView>
+        )}
+
+        {/* Hàng nút chức năng */}
+        {!capturedImage ? (
+          <View style={styles.actionRow}>
+            <TouchableOpacity style={styles.miniButton} onPress={toggleCameraFacing}>
+              <FlipIcon size={20} color="#555" />
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.mainCaptureButton} onPress={takePicture}>
+              <View style={styles.captureInner}>
+                 <CameraIcon size={32} color="#fff" />
+              </View>
             </TouchableOpacity>
 
-            {/* Capture Button */}
-            <TouchableOpacity style={styles.captureBtn} onPress={takePicture}>
-              <View style={styles.captureBtnInner} />
-            </TouchableOpacity>
-
-            {/* Gallery Button */}
-            <TouchableOpacity style={styles.sideBtn} onPress={pickImage}>
-              <Text style={styles.sideBtnText}>🖼️</Text>
-              <Text style={styles.sideBtnLabel}>Thư viện</Text>
+            <TouchableOpacity style={styles.miniButton} onPress={pickImage}>
+              <GalleryIcon size={20} color="#555" />
             </TouchableOpacity>
           </View>
-
-          {/* Bottom Disclaimer */}
-          <View style={styles.bottomDisclaimer}>
-            <Text style={styles.bottomDisclaimerText}>
-              Kết quả AI không thay thế tư vấn từ bác sĩ chuyên khoa
-            </Text>
+        ) : (
+          <View style={styles.actionRow}>
+             <TouchableOpacity style={styles.secondaryButton} onPress={() => setCapturedImage(null)}>
+                <Text style={styles.secondaryButtonText}>{t('common.retry')}</Text>
+             </TouchableOpacity>
           </View>
-        </View>
-      )}
+        )}
 
-      {isInferenceLoading && (
-        <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color="#fff" />
-          <Text style={styles.loadingTextWhite}>AI đang phân tích...</Text>
-        </View>
-      )}
+        <View style={styles.divider} />
+
+        {/* Nút Gọi Cấp Cứu */}
+        <TouchableOpacity 
+          style={styles.emergencyButton} 
+          onPress={() => Linking.openURL('tel:115')}
+        >
+          <PhoneIcon size={20} color="#fff" style={{marginRight: 8}} />
+          <Text style={styles.emergencyText}>{t('offline.call_emergency')}</Text>
+        </TouchableOpacity>
+
+        <Text style={styles.disclaimerText}>
+          {t('offline.medical_disclaimer_bottom')}
+        </Text>
+      </View>
+
+      {/* Thanh điều hướng giả phía dưới (Bottom Navigation) */}
+      <View style={styles.bottomNav}>
+         <TouchableOpacity><HomeIcon size={24} color="#007bff" /></TouchableOpacity>
+         <TouchableOpacity style={{opacity: 0.3}}><ChatIcon size={24} color="#333" /></TouchableOpacity>
+         <TouchableOpacity style={{opacity: 0.3}}><MedicineIcon size={24} color="#333" /></TouchableOpacity>
+         <TouchableOpacity style={{opacity: 0.3}}><PhoneIcon size={24} color="#333" /></TouchableOpacity>
+         <TouchableOpacity style={{opacity: 0.3}}><ProfileIcon size={24} color="#333" /></TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 }
@@ -251,164 +280,211 @@ export default function OfflineMode() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
-    justifyContent: 'center',
-  },
-  cameraWrapper: {
-    flex: 1,
-  },
-  camera: {
-    flex: 3,
-  },
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.3)',
-    justifyContent: 'center',
+    backgroundColor: '#f4f7f9', // Màu nền sáng thanh lịch
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  focusFrame: {
-    width: 250,
-    height: 250,
-    borderWidth: 2,
-    borderColor: '#fff',
-    borderRadius: 20,
-    backgroundColor: 'transparent',
-  },
-  hintText: {
-    color: '#fff',
-    marginTop: 20,
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  offlineWarning: {
-    position: 'absolute',
-    bottom: 20,
-    left: 20,
-    right: 20,
-    backgroundColor: 'rgba(255, 193, 7, 0.9)',
-    padding: 10,
-    borderRadius: 8,
-  },
-  offlineWarningText: {
-    color: '#333',
-    fontSize: 12,
-    textAlign: 'center',
-    fontWeight: '600',
-  },
-  controls: {
-    flexDirection: 'row',
+  card: {
+    width: width * 0.9,
     backgroundColor: '#fff',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    paddingVertical: 20,
-  },
-  sideBtn: {
-    alignItems: 'center',
-    padding: 10,
-  },
-  sideBtnText: {
-    fontSize: 28,
-  },
-  sideBtnLabel: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 4,
-  },
-  captureBtn: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    borderWidth: 4,
-    borderColor: '#007bff',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  captureBtnInner: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: '#007bff',
-  },
-  bottomDisclaimer: {
-    backgroundColor: '#f8f9fa',
-    padding: 10,
-  },
-  bottomDisclaimerText: {
-    fontSize: 11,
-    color: '#666',
-    textAlign: 'center',
-  },
-  resultContainer: {
-    flex: 1,
-    backgroundColor: '#fff',
+    borderRadius: 24,
     padding: 20,
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.08,
+    shadowRadius: 20,
+    marginBottom: 60, // Chừa chỗ cho bottom nav
   },
-  preview: {
-    width: '100%',
-    height: 300,
-    borderRadius: 15,
-    marginBottom: 20,
-  },
-  resultTable: {
-    backgroundColor: '#f8f9fa',
-    borderRadius: 10,
-    padding: 15,
-  },
-  tableTitle: {
-    fontWeight: 'bold',
-    fontSize: 16,
-    marginBottom: 10,
-    textAlign: 'center',
-    color: '#333',
-  },
-  row: {
+  header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    alignItems: 'center',
+    marginBottom: 10,
   },
-  cellLabel: {
-    fontSize: 14,
-    color: '#444',
+  logoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  logoIcon: {
+    marginRight: 8,
+  },
+  logoIconText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 18,
+  },
+  logoText: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#333',
+  },
+  langSelector: {
+    backgroundColor: '#f8f9fa',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#eee',
+  },
+  langSelectorText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#555',
+  },
+  subTitle: {
+    textAlign: 'center',
+    fontSize: 12,
+    color: '#888',
+    marginBottom: 15,
+  },
+  mediaContainer: {
+    width: 280,
+    height: 280,
+    alignSelf: 'center',
+    borderRadius: 20,
+    overflow: 'hidden',
+    borderWidth: 1.5,
+    borderColor: '#222',
+    backgroundColor: '#000',
+    marginBottom: 20,
+    position: 'relative',
+  },
+  camera: {
     flex: 1,
   },
-  cellValue: {
-    fontWeight: 'bold',
-    color: '#007bff',
+  mainImage: {
+    width: '100%',
+    height: '100%',
   },
-  disclaimerBox: {
-    backgroundColor: '#fff3cd',
-    borderRadius: 10,
-    padding: 15,
-    marginTop: 15,
-    borderLeftWidth: 4,
-    borderLeftColor: '#ffc107',
+  mediaOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(255,255,255,0.85)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  disclaimerTitle: {
+  actionRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  mainCaptureButton: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    backgroundColor: '#007bff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginHorizontal: 20,
+    shadowColor: '#007bff',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  captureInner: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  miniButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#f1f4f8',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emojiIcon: {
+    fontSize: 20,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#f0f0f0',
+    width: '100%',
+    marginVertical: 15,
+  },
+  emergencyButton: {
+    backgroundColor: '#ef4444',
+    flexDirection: 'row',
+    height: 48,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  emergencyText: {
+    color: '#fff',
     fontWeight: 'bold',
-    fontSize: 14,
-    color: '#856404',
-    marginBottom: 8,
+    fontSize: 15,
   },
   disclaimerText: {
-    fontSize: 12,
-    color: '#856404',
-    marginBottom: 4,
+    fontSize: 10,
+    color: '#aaa',
+    textAlign: 'center',
+    paddingHorizontal: 10,
   },
-  retryButton: {
-    backgroundColor: '#6c757d',
-    padding: 15,
-    borderRadius: 10,
-    marginTop: 20,
-    marginBottom: 30,
-    alignItems: 'center',
+  bottomNav: {
+    flexDirection: 'row',
+    position: 'absolute',
+    bottom: 0,
+    width: '100%',
+    backgroundColor: '#fff',
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
+    paddingVertical: 12,
+    paddingBottom: Platform.OS === 'ios' ? 30 : 12, // SafeArea cho iOS
+    justifyContent: 'space-around',
+  },
+  navIcon: {
+    fontSize: 22,
+  },
+  resultsScroll: {
+    maxHeight: 120,
+    marginBottom: 15,
+    paddingHorizontal: 5,
+  },
+  resultRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 7,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f8f8f8',
+  },
+  diseaseName: {
+    fontSize: 13,
+    color: '#444',
+    flex: 1,
+    fontWeight: '500',
+  },
+  probability: {
+    fontWeight: 'bold',
+    color: '#007bff',
+    fontSize: 13,
+  },
+  secondaryButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 35,
+    borderRadius: 20,
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+  secondaryButtonText: {
+    color: '#666',
+    fontWeight: 'bold',
+    fontSize: 14,
   },
   button: {
     backgroundColor: '#007bff',
-    padding: 15,
+    padding: 12,
     borderRadius: 10,
-    marginHorizontal: 50,
+    width: 200,
     alignItems: 'center',
   },
   buttonText: {
@@ -416,40 +492,47 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   loadingText: {
-    marginTop: 15,
-    textAlign: 'center',
+    fontSize: 13,
     color: '#666',
+    fontWeight: '500',
   },
-  loadingTextWhite: {
-    marginTop: 15,
+  floatingWarning: {
+    position: 'absolute',
+    bottom: 15,
+    left: 10,
+    right: 10,
+    backgroundColor: 'rgba(255, 193, 7, 0.9)',
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  floatingWarningText: {
+    color: '#856404',
+    fontSize: 10,
+    fontWeight: '600',
     textAlign: 'center',
-    color: '#fff',
   },
-  loadingOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.7)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    zIndex: 999,
+  noticeBox: {
+    backgroundColor: '#fff9db',
+    borderRadius: 12,
+    padding: 12,
+    marginTop: 15,
+    borderLeftWidth: 4,
+    borderLeftColor: '#fcc419',
   },
-  errorBox: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-  },
-  errorTitle: {
-    fontSize: 18,
+  noticeTitle: {
+    fontSize: 12,
     fontWeight: 'bold',
-    color: '#d32f2f',
-    marginBottom: 10,
+    color: '#856404',
+    marginBottom: 5,
   },
-  errorMessage: {
-    fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
-    marginBottom: 20,
-  },
+  noticeItem: {
+    fontSize: 11,
+    color: '#856404',
+    marginBottom: 2,
+    lineHeight: 16,
+  }
 });
-
-

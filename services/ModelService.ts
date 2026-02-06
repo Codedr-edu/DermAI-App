@@ -29,7 +29,7 @@ export async function loadModel(metadata: any) {
     classNames = metadata.classes;
     console.log('📊 Số classes:', classNames.length);
 
-    const modelAsset = Asset.fromModule(require('../assets/model/skin_convnext.pte'));
+    const modelAsset = Asset.fromModule(require('../assets/model/skin_convnext_xnnpack.pte'));
     await modelAsset.downloadAsync();
 
     if (!modelAsset.localUri) {

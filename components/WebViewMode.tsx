@@ -3,12 +3,12 @@ import {
   StyleSheet,
   View,
   ActivityIndicator,
-  SafeAreaView,
   Platform,
-  StatusBar,
   Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView, WebViewNavigation } from 'react-native-webview';
+import { useTranslation } from 'react-i18next';
 
 // ----------------------------------------------------
 // Cấu Hình
@@ -25,6 +25,8 @@ const LoadingIndicator = () => (
 );
 
 export default function WebViewMode() {
+  const { t } = useTranslation();
+  
   /**
    * Xử lý lỗi tải trang của WebView.
    */
@@ -33,9 +35,9 @@ export default function WebViewMode() {
     console.error('WebView Error:', nativeEvent);
 
     Alert.alert(
-      'Lỗi Tải Trang',
-      `Không thể tải trang: ${nativeEvent.description}. Vui lòng kiểm tra kết nối mạng hoặc URL.`,
-      [{ text: 'OK' }],
+      t('webview.error_title'),
+      t('webview.error_message', { description: nativeEvent.description }),
+      [{ text: t('common.ok') }],
       { cancelable: true }
     );
   };
@@ -87,7 +89,6 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: '#fff',
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
   container: {
     flex: 1,

@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { View, ActivityIndicator, StyleSheet, Text } from 'react-native';
 import NetInfo from '@react-native-community/netinfo';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import WebViewMode from './components/WebViewMode';
 import OfflineMode from './components/OfflineMode';
+import './i18n'; // Initialize i18n
+import i18n from './i18n';
 
 class ErrorBoundary extends React.Component<any, { hasError: boolean; error: any }> {
   constructor(props: any) {
@@ -22,9 +25,9 @@ class ErrorBoundary extends React.Component<any, { hasError: boolean; error: any
     if (this.state.hasError) {
       return (
         <View style={styles.errorContainer}>
-          <Text style={styles.errorTitle}>😞 Ứng dụng gặp lỗi</Text>
+          <Text style={styles.errorTitle}>{i18n.t('app.error_title')}</Text>
           <Text style={styles.errorText}>{String(this.state.error)}</Text>
-          <Text style={styles.errorHint}>Vui lòng khởi động lại ứng dụng</Text>
+          <Text style={styles.errorHint}>{i18n.t('app.error_hint')}</Text>
         </View>
       );
     }
@@ -78,9 +81,11 @@ export default function App() {
   );
   
   return (
-    <ErrorBoundary>
-      {appContent}
-    </ErrorBoundary>
+    <SafeAreaProvider>
+      <ErrorBoundary>
+        {appContent}
+      </ErrorBoundary>
+    </SafeAreaProvider>
   );
 }
 

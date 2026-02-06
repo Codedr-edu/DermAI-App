@@ -1,0 +1,77 @@
+{
+  "common": {
+    "camera_permission": "We need camera permission to diagnose.",
+    "grant_permission": "Grant Permission",
+    "retry": "Try Again",
+    "ok": "OK"
+  },
+  "app": {
+    "error_title": "😞 Application Error",
+    "error_hint": "Please restart the application"
+  },
+  "webview": {
+    "error_title": "Page Load Error",
+    "error_message": "Cannot load page: {{description}}. Please check your network connection or URL."
+  },
+  "errors": {
+    "error": "Error",
+    "image_picker": "Cannot select image from gallery.",
+    "image_process": "Cannot process image.",
+    "model_load": "Cannot load model"
+  },
+  "offline": {
+    "initializing": "Initializing Offline AI...",
+    "error_init": "AI Initialization Error",
+    "analyzing": "AI is analyzing...",
+    "capture_instruction": "Capture skin area for check - camera 300x300",
+    "call_emergency": "Call Emergency",
+    "accuracy_warning": "⚠️ Offline mode has 1-2% lower accuracy than online",
+    "medical_disclaimer_bottom": "AI results do not replace consultation with a specialist",
+    "result_title": "PREDICTION RESULTS (OFFLINE)",
+    "retake": "Retake",
+    "flip": "Flip",
+    "gallery": "Gallery",
+    "important_notices": "⚠️ Important Notices:",
+    "notice_reference": "• Offline results are for reference only",
+    "notice_accuracy": "• Accuracy is 1-2% lower than online version",
+    "notice_no_replacement": "• Does not replace diagnosis from a specialist",
+    "notice_consult_doctor": "• Please consult a dermatologist if symptoms are severe"
+  },
+  "diseases": {
+    "Acne And Rosacea Photos": "Acne and Rosacea",
+    "Actinic Keratosis Basal Cell Carcinoma And Other Malignant Lesions": "Actinic Keratosis / Basal Cell Carcinoma",
+    "Atopic Dermatitis Photos": "Atopic Dermatitis",
+    "Ba  Cellulitis": "Bacterial Cellulitis",
+    "Ba Impetigo": "Bacterial Impetigo",
+    "Benign": "Benign Lesion",
+    "Bullous Disease Photos": "Bullous Disease",
+    "Cellulitis Impetigo And Other Bacterial Infections": "Bacterial Infections",
+    "Eczema Photos": "Eczema",
+    "Exanthems And Drug Eruptions": "Exanthems/Drug Eruptions",
+    "Fu Athlete Foot": "Fungal Athlete's Foot",
+    "Fu Nail Fungus": "Fungal Nail Infection",
+    "Fu Ringworm": "Fungal Ringworm",
+    "Hair Loss Photos Alopecia And Other Hair Diseases": "Hair Loss / Alopecia",
+    "Heathy": "Healthy Skin",
+    "Herpes Hpv And Other Stds Photos": "Herpes / HPV / STDs",
+    "Light Diseases And Disorders Of Pigmentation": "Pigmentation Disorders",
+    "Lupus And Other Connective Tissue Diseases": "Lupus / Connective Tissue Disease",
+    "Malignant": "Malignant Lesion",
+    "Melanoma Skin Cancer Nevi And Moles": "Melanoma / Moles",
+    "Nail Fungus And Other Nail Disease": "Nail Diseases",
+    "Pa Cutaneous Larva Migrans": "Cutaneous Larva Migrans",
+    "Poison Ivy Photos And Other Contact Dermatitis": "Contact Dermatitis",
+    "Psoriasis Pictures Lichen Planus And Related Diseases": "Psoriasis / Lichen Planus",
+    "Rashes": "Rashes",
+    "Scabies Lyme Disease And Other Infestations And Bites": "Infestations / Bites",
+    "Seborrheic Keratoses And Other Benign Tumors": "Seborrheic Keratoses",
+    "Systemic Disease": "Systemic Disease",
+    "Tinea Ringworm Candidiasis And Other Fungal Infections": "Tinea / Fungal Infections",
+    "Urticaria Hives": "Urticaria / Hives",
+    "Vascular Tumors": "Vascular Tumors",
+    "Vasculitis Photos": "Vasculitis",
+    "Vi Chickenpox": "Viral Chickenpox",
+    "Vi Shingles": "Viral Shingles",
+    "Warts Molluscum And Other Viral Infections": "Warts / Viral Infections"
+  }
+}

@@ -1,0 +1,77 @@
+{
+  "common": {
+    "camera_permission": "Chúng tôi cần quyền truy cập Camera để chẩn đoán.",
+    "grant_permission": "Cấp quyền Camera",
+    "retry": "Thử lại",
+    "ok": "OK"
+  },
+  "app": {
+    "error_title": "😞 Ứng dụng gặp lỗi",
+    "error_hint": "Vui lòng khởi động lại ứng dụng"
+  },
+  "webview": {
+    "error_title": "Lỗi Tải Trang",
+    "error_message": "Không thể tải trang: {{description}}. Vui lòng kiểm tra kết nối mạng hoặc URL."
+  },
+  "offline": {
+    "initializing": "Đang khởi tạo AI Offline...",
+    "error_init": "Lỗi khởi tạo AI",
+    "analyzing": "AI đang phân tích...",
+    "capture_instruction": "Chụp vùng da để kiểm tra - camera 300x300",
+    "call_emergency": "Gọi Cấp Cứu",
+    "accuracy_warning": "⚠️ Chế độ offline có độ chính xác thấp hơn 1-2% so với online",
+    "medical_disclaimer_bottom": "Kết quả AI không thay thế tư vấn từ bác sĩ chuyên khoa",
+    "result_title": "KẾT QUẢ DỰ ĐOÁN (OFFLINE)",
+    "retake": "Chụp lại",
+    "flip": "Xoay",
+    "gallery": "Thư viện",
+    "important_notices": "⚠️ Lưu ý quan trọng:",
+    "notice_reference": "• Kết quả offline chỉ mang tính tham khảo",
+    "notice_accuracy": "• Độ chính xác thấp hơn phiên bản online 1-2%",
+    "notice_no_replacement": "• Không thay thế chẩn đoán từ bác sĩ chuyên khoa",
+    "notice_consult_doctor": "• Hãy tham khảo ý kiến bác sĩ da liễu nếu có triệu chứng nghiêm trọng"
+  },
+  "errors": {
+    "error": "Lỗi",
+    "image_picker": "Không thể chọn ảnh từ thư viện.",
+    "image_process": "Không thể xử lý ảnh.",
+    "model_load": "Không thể load model"
+  },
+  "diseases": {
+    "Acne And Rosacea Photos": "Mụn trứng cá và Rosacea",
+    "Actinic Keratosis Basal Cell Carcinoma And Other Malignant Lesions": "Dày sừng ánh sáng / Ung thư biểu mô tế bào đáy",
+    "Atopic Dermatitis Photos": "Viêm da cơ địa",
+    "Ba  Cellulitis": "Viêm mô tế bào",
+    "Ba Impetigo": "Chốc lở (Do vi khuẩn)",
+    "Benign": "Lành tính",
+    "Bullous Disease Photos": "Bệnh bóng nước",
+    "Cellulitis Impetigo And Other Bacterial Infections": "Nhiễm trùng da / Chốc lở",
+    "Eczema Photos": "Chàm (Eczema)",
+    "Exanthems And Drug Eruptions": "Phát ban do thuốc",
+    "Fu Athlete Foot": "Nấm chân",
+    "Fu Nail Fungus": "Nấm móng",
+    "Fu Ringworm": "Hắc lào (Nấm da)",
+    "Hair Loss Photos Alopecia And Other Hair Diseases": "Rụng tóc / Hói đầu",
+    "Heathy": "Da khỏe mạnh",
+    "Herpes Hpv And Other Stds Photos": "Herpes / HPV / Bệnh STDs",
+    "Light Diseases And Disorders Of Pigmentation": "Rối loạn sắc tố da",
+    "Lupus And Other Connective Tissue Diseases": "Lupus ban đỏ / Bệnh mô liên kết",
+    "Malignant": "Ác tính",
+    "Melanoma Skin Cancer Nevi And Moles": "Ung thư hắc tố / Nốt ruồi",
+    "Nail Fungus And Other Nail Disease": "Bệnh về móng",
+    "Pa Cutaneous Larva Migrans": "Ấu trùng di chuyển dưới da",
+    "Poison Ivy Photos And Other Contact Dermatitis": "Viêm da tiếp xúc",
+    "Psoriasis Pictures Lichen Planus And Related Diseases": "Vảy nến / Lichen phẳng",
+    "Rashes": "Phát ban",
+    "Scabies Lyme Disease And Other Infestations And Bites": "Ghẻ / Côn trùng cắn",
+    "Seborrheic Keratoses And Other Benign Tumors": "Dày sừng tiết bã",
+    "Systemic Disease": "Bệnh toàn thân",
+    "Tinea Ringworm Candidiasis And Other Fungal Infections": "Nấm da / Nấm Candida",
+    "Urticaria Hives": "Mề đay",
+    "Vascular Tumors": "U mạch máu",
+    "Vasculitis Photos": "Viêm mạch",
+    "Vi Chickenpox": "Thủy đậu",
+    "Vi Shingles": "Zona thần kinh",
+    "Warts Molluscum And Other Viral Infections": "Mụn cóc / Nhiễm trùng Virus"
+  }
+}
